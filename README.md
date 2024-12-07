@@ -21,11 +21,31 @@ pip install mcp-simple-arxiv
 
 Add this configuration to your `claude_desktop_config.json`:
 
+(Mac OS)
+
 ```json
 {
   "mcpServers": {
-    "arxiv": {
-      "command": "mcp-simple-arxiv"
+    "simple-arxiv": {
+      "command": "python",
+      "args": ["-m", "mcp_simple_arxiv"]
+      }
+    }
+  }
+}
+```
+
+(Windows version):
+
+```json
+{
+  "mcpServers": {
+    "simple-arxiv": {
+      "command": "C:\\Users\\YOUR_USERNAME\\AppData\\Local\\Programs\\Python\\Python311\\python.exe",
+      "args": [
+        "-m",
+        "mcp_simple_arxiv"
+      ]
     }
   }
 }
