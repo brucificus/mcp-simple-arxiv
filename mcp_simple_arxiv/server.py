@@ -16,7 +16,6 @@ from .update_taxonomy import load_taxonomy, update_taxonomy_file
 
 logger = logging.getLogger(__name__)
 
-# Initialize the server
 app = Server("arxiv-server")
 arxiv_client = ArxivClient()
 
@@ -26,7 +25,7 @@ async def list_tools() -> list[types.Tool]:
     return [
         types.Tool(
             name="search_papers",
-            description="""Search for papers on arXiv by title and abstract content. 
+            description="""Search for papers on arXiv by title and abstract content.
             
 You can use advanced search syntax:
 - Search in title: ti:"search terms"
@@ -78,7 +77,7 @@ Examples:
                 "properties": {
                     "primary_category": {
                         "type": "string",
-                        "description": "Optional: filter by primary category (e.g., 'cs' for Computer Science)",
+                        "description": "Optional: filter by primary category (e.g., 'cs' for Computer Science)"
                     }
                 }
             }
@@ -109,6 +108,10 @@ async def call_tool(name: str, arguments: dict) -> list[types.TextContent]:
             for i, paper in enumerate(papers, 1):
                 result += f"{i}. {paper['title']}\n"
                 result += f"   Authors: {', '.join(paper['authors'])}\n"
+                if paper['primary_category']:
+                    result += f"   Primary Category: {paper['primary_category']}\n"
+                if paper['categories']:
+                    result += f"   Additional Categories: {', '.join(paper['categories'])}\n"
                 result += f"   ID: {paper['id']}\n"
                 result += f"   Published: {paper['published']}\n"
                 result += "\n"
@@ -125,18 +128,32 @@ async def call_tool(name: str, arguments: dict) -> list[types.TextContent]:
             result += f"Published: {paper['published']}\n"
             result += f"Last Updated: {paper['updated']}\n\n"
             
+            # Add categories
+            if paper['primary_category']:
+                result += f"Primary Category: {paper['primary_category']}\n"
+            if paper['categories']:
+                result += f"Additional Categories: {', '.join(paper['categories'])}\n"
+            
+            # Add DOI if available
+            if paper['doi']:
+                result += f"DOI: {paper['doi']}\n"
+            
+            # Add references if available
             if paper["journal_ref"]:
                 result += f"Journal Reference: {paper['journal_ref']}\n"
             if paper["comment"]:
                 result += f"Comment: {paper['comment']}\n"
             
+            # Add abstract
             result += "\nAbstract:\n"
             result += paper["summary"]
-            result += "\n\nAvailable Formats:\n"
-            if paper["pdf_url"]:
-                result += f"- PDF: {paper['pdf_url']}\n"
-            if paper["html_url"]:
-                result += f"- HTML: {paper['html_url']}\n"
+            
+            # Add all available formats
+            result += "\n\nAvailable Access Options:\n"
+            result += "- arXiv abstract page: " + paper["abstract_url"] + "\n"
+            result += "- PDF version: " + paper["pdf_url"] + "\n"
+            if paper["html_url"]:  # Add HTML version if available
+                result += "- Full text HTML version: " + paper["html_url"] + "\n"
             
             return [types.TextContent(type="text", text=result)]
 
