@@ -26,10 +26,8 @@ class ArxivClient:
         """Ensures we respect arXiv's rate limit of 1 request every 3 seconds."""
         async with self._lock:
             if self._last_request is not None:
-                # Calculate time since last request
                 elapsed = datetime.now() - self._last_request
                 if elapsed < timedelta(seconds=3):
-                    # Wait the remaining time
                     await asyncio.sleep(3 - elapsed.total_seconds())
             self._last_request = datetime.now()
 
@@ -37,17 +35,34 @@ class ArxivClient:
         """Clean up text by removing extra whitespace and newlines."""
         return " ".join(text.split())
 
+    def _get_html_url(self, arxiv_id: str) -> str:
+        """
+        Construct HTML version URL for a paper.
+        
+        The HTML version URL is not provided by the API but can be constructed
+        by modifying the PDF URL pattern.
+        """
+        # Remove version suffix if present (e.g., v1, v2)
+        base_id = arxiv_id.split('v')[0]
+        return f"https://arxiv.org/html/{arxiv_id}"
+
     def _parse_entry(self, entry: Dict[str, Any]) -> Dict[str, Any]:
         """Parse a feed entry into a paper dictionary."""
         # Extract PDF and HTML links
         pdf_url = None
-        html_url = None
+        abstract_url = None  # This is the URL to the abstract page
         for link in entry.get('links', []):
             if isinstance(link, dict):
                 if link.get('type') == 'application/pdf':
                     pdf_url = link.get('href')
                 elif link.get('type') == 'text/html':
-                    html_url = link.get('href')
+                    abstract_url = link.get('href')
+
+        # Get paper ID
+        paper_id = entry.get('id', '').split("/abs/")[-1].rstrip()
+        
+        # Create HTML version URL
+        html_url = self._get_html_url(paper_id) if paper_id else None
 
         # Get authors
         authors = []
@@ -59,16 +74,31 @@ class ArxivClient:
 
         # Get categories
         categories = []
+        primary_category = None
+        
+        # Get primary category
+        if 'arxiv_primary_category' in entry:
+            if isinstance(entry['arxiv_primary_category'], dict):
+                primary_category = entry['arxiv_primary_category'].get('term')
+            elif hasattr(entry['arxiv_primary_category'], 'term'):
+                primary_category = entry['arxiv_primary_category'].term
+        
+        # Get all categories
         for category in entry.get('tags', []):
             if isinstance(category, dict) and 'term' in category:
                 categories.append(category['term'])
             elif hasattr(category, 'term'):
                 categories.append(category.term)
 
+        # Remove primary category from regular categories if it's there
+        if primary_category and primary_category in categories:
+            categories.remove(primary_category)
+
         return {
-            "id": entry.get('id', '').split("/abs/")[-1].rstrip(),
+            "id": paper_id,
             "title": self._clean_text(entry.get('title', '')),
             "authors": authors,
+            "primary_category": primary_category,
             "categories": categories,
             "published": entry.get('published', ''),
             "updated": entry.get('updated', ''),
@@ -76,9 +106,9 @@ class ArxivClient:
             "comment": self._clean_text(entry.get('arxiv_comment', '')),
             "journal_ref": entry.get('arxiv_journal_ref', ''),
             "doi": entry.get('arxiv_doi', ''),
-            "primary_category": entry.get('arxiv_primary_category', {}).get('term'),
             "pdf_url": pdf_url,
-            "html_url": html_url,
+            "abstract_url": abstract_url,  # URL to abstract page
+            "html_url": html_url  # URL to HTML version if available
         }
 
     async def search(self, query: str, max_results: int = 10) -> List[Dict[str, Any]]:
@@ -140,7 +170,12 @@ class ArxivClient:
             paper_id: arXiv paper ID (e.g., "2103.08220")
             
         Returns:
-            Dictionary containing paper metadata
+            Dictionary containing paper metadata, including:
+            - Basic metadata (title, authors, dates)
+            - Categories (primary and others)
+            - Abstract and comments
+            - URLs (abstract page, PDF version, HTML version if available)
+            - DOI if available
         """
         await self._wait_for_rate_limit()
         
