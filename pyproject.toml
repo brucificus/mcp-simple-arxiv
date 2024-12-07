@@ -4,11 +4,12 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mcp-simple-arxiv"
-version = "0.2.0"
+version = "0.2.1"
 description = "An MCP server that provides access to arXiv papers through their API."
 readme = "README.md"
 authors = [
-    {name = "Andy Brandt", email = "andy@codesprinters.com"}
+    {name = "Andy Brandt", email = "andy@codesprinters.com"},
+    {name = "Claude", email = "claude@anthropic.com"}
 ]
 requires-python = ">=3.10"
 classifiers = [

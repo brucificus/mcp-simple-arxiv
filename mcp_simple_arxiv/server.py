@@ -16,6 +16,18 @@ from .update_taxonomy import load_taxonomy, update_taxonomy_file
 
 logger = logging.getLogger(__name__)
 
+def get_first_sentence(text: str, max_len: int = 200) -> str:
+    """Extract first sentence from text, limiting length."""
+    # Look for common sentence endings
+    for end in ['. ', '! ', '? ']:
+        pos = text.find(end)
+        if pos != -1 and pos < max_len:
+            return text[:pos + 1]
+    # If no sentence ending found, just take first max_len chars
+    if len(text) > max_len:
+        return text[:max_len].rstrip() + '...'
+    return text
+
 app = Server("arxiv-server")
 arxiv_client = ArxivClient()
 
@@ -108,12 +120,17 @@ async def call_tool(name: str, arguments: dict) -> list[types.TextContent]:
             for i, paper in enumerate(papers, 1):
                 result += f"{i}. {paper['title']}\n"
                 result += f"   Authors: {', '.join(paper['authors'])}\n"
-                if paper['primary_category']:
-                    result += f"   Primary Category: {paper['primary_category']}\n"
-                if paper['categories']:
-                    result += f"   Additional Categories: {', '.join(paper['categories'])}\n"
                 result += f"   ID: {paper['id']}\n"
-                result += f"   Published: {paper['published']}\n"
+                result += f"   Categories: "
+                if paper['primary_category']:
+                    result += f"Primary: {paper['primary_category']}"
+                if paper['categories']:
+                    result += f", Additional: {', '.join(paper['categories'])}"
+                result += f"\n   Published: {paper['published']}\n"
+                
+                # Add first sentence of abstract
+                abstract_preview = get_first_sentence(paper['summary'])
+                result += f"   Preview: {abstract_preview}\n"
                 result += "\n"
             
             return [types.TextContent(type="text", text=result)]
@@ -122,38 +139,43 @@ async def call_tool(name: str, arguments: dict) -> list[types.TextContent]:
             paper_id = arguments["paper_id"]
             paper = await arxiv_client.get_paper(paper_id)
             
-            # Format paper details in a readable way
+            # Format paper details in a readable way with clear sections
             result = f"Title: {paper['title']}\n\n"
-            result += f"Authors: {', '.join(paper['authors'])}\n"
-            result += f"Published: {paper['published']}\n"
-            result += f"Last Updated: {paper['updated']}\n\n"
             
-            # Add categories
+            # Metadata section
+            result += "Metadata:\n"
+            result += f"- Authors: {', '.join(paper['authors'])}\n"
+            result += f"- Published: {paper['published']}\n"
+            result += f"- Last Updated: {paper['updated']}\n"
+            result += "- Categories: "
             if paper['primary_category']:
-                result += f"Primary Category: {paper['primary_category']}\n"
+                result += f"Primary: {paper['primary_category']}"
             if paper['categories']:
-                result += f"Additional Categories: {', '.join(paper['categories'])}\n"
+                result += f", Additional: {', '.join(paper['categories'])}"
+            result += "\n"
             
-            # Add DOI if available
             if paper['doi']:
-                result += f"DOI: {paper['doi']}\n"
-            
-            # Add references if available
+                result += f"- DOI: {paper['doi']}\n"
             if paper["journal_ref"]:
-                result += f"Journal Reference: {paper['journal_ref']}\n"
-            if paper["comment"]:
-                result += f"Comment: {paper['comment']}\n"
+                result += f"- Journal Reference: {paper['journal_ref']}\n"
             
-            # Add abstract
+            # Abstract section
             result += "\nAbstract:\n"
             result += paper["summary"]
+            result += "\n"
             
-            # Add all available formats
-            result += "\n\nAvailable Access Options:\n"
-            result += "- arXiv abstract page: " + paper["abstract_url"] + "\n"
-            result += "- PDF version: " + paper["pdf_url"] + "\n"
+            # Access options section
+            result += "\nAccess Options:\n"
+            result += "- Abstract page: " + paper["abstract_url"] + "\n"
             if paper["html_url"]:  # Add HTML version if available
                 result += "- Full text HTML version: " + paper["html_url"] + "\n"
+            result += "- PDF version: " + paper["pdf_url"] + "\n"
+            
+            # Additional information section
+            if paper["comment"] or "code" in paper["comment"].lower():
+                result += "\nAdditional Information:\n"
+                if paper["comment"]:
+                    result += "- Comment: " + paper["comment"] + "\n"
             
             return [types.TextContent(type="text", text=result)]
 
