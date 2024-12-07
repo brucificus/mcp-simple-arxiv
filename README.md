@@ -30,7 +30,6 @@ Add this configuration to your `claude_desktop_config.json`:
       "command": "python",
       "args": ["-m", "mcp_simple_arxiv"]
       }
-    }
   }
 }
 ```
