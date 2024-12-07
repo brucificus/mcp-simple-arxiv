@@ -1,6 +1,5 @@
 # Planned Features and Improvements
 
-## High Priority
 1. **Total Match Count in Search Results**
    - Add total number of matches found to search results
    - This helps users and AIs determine if search needs refinement
@@ -25,13 +24,12 @@
    - Make sort order configurable (ascending/descending)
    - Expose sorting options in tool description
 
-## Medium Priority
 5. **Date Range Filters**
    - Allow filtering papers by submission/update date range
    - Support both absolute dates and relative ranges (last week/month/year)
    - Implement using arXiv API's date filtering capabilities
 
-6. **DOI Integration**
+6. **DOI Integration** [DONE]
    - Add DOI (Digital Object Identifier) to paper details when available
    - Extract from arXiv API response
    - Include DOI URL for easy access
@@ -48,7 +46,6 @@
    - Support parentheses for grouping
    - Example: "(cs.AI OR cs.LG) AND NOT cs.DB"
 
-## Low Priority
 9. **Citation Format Support**
    - Generate citation strings in common formats (BibTeX, APA, etc.)
    - Include all necessary metadata (authors, title, arXiv ID, etc.)
@@ -59,8 +56,7 @@
     - Consider alternative metrics like downloads or social media mentions
     - NOTE: Might require integration with additional APIs
 
-## Technical Improvements
-11. **HTML Paper Access**
+11. **HTML Paper Access**  [DONE]
     - Add detection of HTML version availability
     - Include HTML URL in paper metadata when available
     - Add URL construction logic (changing PDF URL to HTML)
