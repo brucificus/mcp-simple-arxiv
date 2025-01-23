@@ -2,6 +2,10 @@
 MCP server for accessing arXiv papers.
 """
 
+import sys
+sys.stdout.reconfigure(encoding='utf-8')
+sys.stdin.reconfigure(encoding='utf-8')
+
 import asyncio
 import json
 import logging
