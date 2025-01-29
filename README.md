@@ -1,5 +1,7 @@
 # mcp-simple-arxiv
 
+[![smithery badge](https://smithery.ai/badge/mcp-simple-arxiv)](https://smithery.ai/server/mcp-simple-arxiv)
+
 An MCP server that provides access to arXiv papers through their API.
 
 <a href="https://glama.ai/mcp/servers/p38q3nagwb"><img width="380" height="200" src="https://glama.ai/mcp/servers/p38q3nagwb/badge" alt="mcp-simple-arxiv MCP server" /></a>
@@ -15,6 +17,15 @@ The server implements proper rate limiting according to arXiv's API guidelines (
 
 ## Installation
 
+### Installing via Smithery
+
+To install Simple Arxiv for Claude Desktop automatically via [Smithery](https://smithery.ai/server/mcp-simple-arxiv):
+
+```bash
+npx -y @smithery/cli install mcp-simple-arxiv --client claude
+```
+
+### Manual Installation
 ```bash
 pip install mcp-simple-arxiv
 ```
